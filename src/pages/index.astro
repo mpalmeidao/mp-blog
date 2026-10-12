@@ -1,0 +1,18 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import FeedList from '../components/FeedList.astro';
+import HomeIntro from '../components/HomeIntro.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import { prepareFeedPosts } from '../lib/feed';
+
+const posts = prepareFeedPosts(
+	await getCollection('posts'),
+	import.meta.env.PROD,
+);
+---
+
+<Base title={SITE_TITLE} description={SITE_DESCRIPTION}>
+	<HomeIntro description={SITE_DESCRIPTION} />
+	<FeedList posts={posts} />
+</Base>

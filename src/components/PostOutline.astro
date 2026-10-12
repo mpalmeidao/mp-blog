@@ -1,0 +1,86 @@
+---
+import type { OutlineItem } from '../lib/outline';
+import OutlineList from './OutlineList.astro';
+
+interface Props {
+	items: OutlineItem[];
+}
+
+const { items } = Astro.props;
+const headingId = 'outline-heading';
+---
+
+{
+	items.length > 0 && (
+		<>
+			<nav class="outline outline__desktop" aria-labelledby={headingId}>
+				<p class="outline__title" id={headingId}>
+					Nesta página
+				</p>
+				<OutlineList items={items} />
+			</nav>
+			<details class="outline outline__mobile">
+				<summary>Nesta página</summary>
+				<nav aria-label="Nesta página">
+					<OutlineList items={items} />
+				</nav>
+			</details>
+		</>
+	)
+}
+
+<script>
+	function initOutlineHighlight() {
+		const links = Array.from(
+			document.querySelectorAll<HTMLAnchorElement>('.outline__link'),
+		);
+		if (links.length === 0) return;
+
+		const targets = links
+			.map((link) => {
+				const id = decodeURIComponent(link.hash.slice(1));
+				const el = document.getElementById(id);
+				return el ? { link, el } : null;
+			})
+			.filter((entry): entry is { link: HTMLAnchorElement; el: HTMLElement } =>
+				Boolean(entry),
+			);
+
+		if (targets.length === 0) return;
+
+		const setCurrent = (id: string) => {
+			for (const { link, el } of targets) {
+				if (el.id === id) {
+					link.setAttribute('aria-current', 'location');
+				} else {
+					link.removeAttribute('aria-current');
+				}
+			}
+		};
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				const visible = entries
+					.filter((entry) => entry.isIntersecting)
+					.sort(
+						(a, b) =>
+							(a.target as HTMLElement).offsetTop -
+							(b.target as HTMLElement).offsetTop,
+					);
+				if (visible[0]) {
+					setCurrent((visible[0].target as HTMLElement).id);
+				}
+			},
+			{
+				rootMargin: '-20% 0px -60% 0px',
+				threshold: [0, 1],
+			},
+		);
+
+		for (const { el } of targets) {
+			observer.observe(el);
+		}
+	}
+
+	initOutlineHighlight();
+</script>

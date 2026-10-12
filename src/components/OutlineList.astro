@@ -1,0 +1,25 @@
+---
+import type { OutlineItem } from '../lib/outline';
+import OutlineList from './OutlineList.astro';
+
+interface Props {
+	items: OutlineItem[];
+}
+
+const { items } = Astro.props;
+---
+
+{
+	items.length > 0 && (
+		<ul class="outline__list">
+			{items.map((item) => (
+				<li>
+					<a class="outline__link" href={`#${item.slug}`}>
+						{item.text}
+					</a>
+					{item.children.length > 0 && <OutlineList items={item.children} />}
+				</li>
+			))}
+		</ul>
+	)
+}

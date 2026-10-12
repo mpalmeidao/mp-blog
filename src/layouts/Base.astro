@@ -1,0 +1,177 @@
+---
+import '../styles/global.css';
+import '@fontsource/source-serif-4/400.css';
+import '@fontsource/source-serif-4/600.css';
+import '@fontsource/source-sans-3/400.css';
+import '@fontsource/source-sans-3/600.css';
+import '@fontsource/source-sans-3/700.css';
+import '@fontsource/source-code-pro/400.css';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import { isCurrentPath, withBase } from '../lib/paths';
+import { themeToggleIcon, themeToggleLabel } from '../lib/themeToggle';
+
+interface Props {
+	title: string;
+	description?: string;
+}
+
+const { title, description = SITE_DESCRIPTION } = Astro.props;
+const pageTitle = title === SITE_TITLE ? title : `${title} · ${SITE_TITLE}`;
+const pathname = Astro.url.pathname;
+const initialIcon = themeToggleIcon('light');
+const initialLabel = themeToggleLabel('light');
+---
+
+<!doctype html>
+<html lang="pt">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg')} />
+		<link rel="icon" href={withBase('/favicon.ico')} />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<meta name="description" content={description} />
+		<title>{pageTitle}</title>
+		<script is:inline>
+			(function () {
+				try {
+					var stored = localStorage.getItem('theme');
+					var prefersDark = window.matchMedia(
+						'(prefers-color-scheme: dark)',
+					).matches;
+					var theme =
+						stored === 'light' || stored === 'dark'
+							? stored
+							: prefersDark
+								? 'dark'
+								: 'light';
+					document.documentElement.setAttribute('data-theme', theme);
+					document.documentElement.dataset.initialTheme = theme;
+				} catch (e) {}
+			})();
+		</script>
+	</head>
+	<body>
+		<a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+		<header class="site-header">
+			<div class="site-header__inner">
+				<a class="site-title" href={withBase('/')}>{SITE_TITLE}</a>
+				<nav class="site-nav" aria-label="Principal">
+					<a
+						href={withBase('/')}
+						aria-current={isCurrentPath(pathname, '/') ? 'page' : undefined}
+						>Início</a
+					>
+					<a
+						href={withBase('/sobre')}
+						aria-current={isCurrentPath(pathname, '/sobre') ? 'page' : undefined}
+						>Sobre</a
+					>
+					<button
+						type="button"
+						class="theme-toggle"
+						data-theme-toggle
+						aria-label={initialLabel}
+					>
+						<span
+							class="theme-toggle__icon"
+							data-icon={initialIcon}
+							aria-hidden="true"
+						>
+							<svg
+								class="theme-toggle__moon"
+								width="20"
+								height="20"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="1.75"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M21 14.5A8.5 8.5 0 0 1 9.5 3 7 7 0 1 0 21 14.5z"
+								></path>
+							</svg>
+							<svg
+								class="theme-toggle__sun"
+								width="20"
+								height="20"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="1.75"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<circle cx="12" cy="12" r="4"></circle>
+								<path
+									d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+								></path>
+							</svg>
+						</span>
+					</button>
+					<script is:inline>
+						(function () {
+							var theme =
+								document.documentElement.dataset.initialTheme || 'light';
+							var button = document.querySelector('[data-theme-toggle]');
+							if (!button) return;
+							var icon = button.querySelector('.theme-toggle__icon');
+							var isLight = theme === 'light';
+							button.setAttribute(
+								'aria-label',
+								isLight ? 'Ativar tema escuro' : 'Ativar tema claro',
+							);
+							if (icon) icon.setAttribute('data-icon', isLight ? 'moon' : 'sun');
+						})();
+					</script>
+				</nav>
+			</div>
+		</header>
+		<main class="site-main" id="conteudo" tabindex="-1">
+			<slot />
+		</main>
+		<footer class="site-footer">
+			<p>{SITE_TITLE}</p>
+		</footer>
+		<script>
+			import { nextTheme, resolveTheme, type Theme } from '../lib/theme';
+			import { themeToggleIcon, themeToggleLabel } from '../lib/themeToggle';
+
+			function currentTheme(): Theme {
+				const attr = document.documentElement.getAttribute('data-theme');
+				const prefersDark = window.matchMedia(
+					'(prefers-color-scheme: dark)',
+				).matches;
+				return resolveTheme(attr, prefersDark);
+			}
+
+			function syncToggle(theme: Theme) {
+				const button = document.querySelector('[data-theme-toggle]');
+				if (!(button instanceof HTMLButtonElement)) return;
+				const icon = button.querySelector('.theme-toggle__icon');
+				button.setAttribute('aria-label', themeToggleLabel(theme));
+				if (icon instanceof HTMLElement) {
+					icon.dataset.icon = themeToggleIcon(theme);
+				}
+			}
+
+			function applyTheme(theme: Theme) {
+				document.documentElement.setAttribute('data-theme', theme);
+				localStorage.setItem('theme', theme);
+				syncToggle(theme);
+			}
+
+			function bindToggle() {
+				const button = document.querySelector('[data-theme-toggle]');
+				if (!(button instanceof HTMLButtonElement)) return;
+				syncToggle(currentTheme());
+				button.addEventListener('click', () => {
+					applyTheme(nextTheme(currentTheme()));
+				});
+			}
+
+			bindToggle();
+		</script>
+	</body>
+</html>
